@@ -9,6 +9,15 @@ const materialSchema = new Schema({
     file : {
         type : String,
     },
+    questions : {
+        type : [Schema.Types.ObjectId],
+        ref : "Question",
+    },
+    materialType : {
+        type : String,
+        enum : ["test", "material"],
+        required: true,
+    },
     info : {
         type : String,
         required : true,

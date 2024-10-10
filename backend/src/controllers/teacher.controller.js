@@ -10,6 +10,27 @@ import { Student } from "../models/student.model.js";
 import { Attendence } from "../models/attendence.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {Material} from "../models/material.model.js"
+import { Question } from "../models/question.model.js";
+import { Quiz } from "../models/quiz.model.js";
+
+
+
+const createQuestion  = asyncHandler(async (question)=> {
+    const { question, options, correctOptions} = question;
+
+    if (!question || !options || !correctOptions) 
+        throw new ApiError(400, "Question, options, correctOptions all are mandatory fields");
+
+
+    const Question = await Question.create({
+        question,
+        options,
+        correctOptions,
+    })
+    return Question._id;
+})
+
+
 class TeacherController{
     constructor(){
     }
@@ -152,6 +173,7 @@ class TeacherController{
         const material = await Material.create({
             classRef: classRef._id,
             file: result?.url || "",
+            materialType : "material",
             info,
         })
         return sendSuccess(res, material, "Material uploaded successfully");
@@ -238,6 +260,79 @@ class TeacherController{
         const material = await Material.find({classRef}).sort({createdAt : -1})
 
         return sendSuccess(res, material, "Material fetched")
+    })
+    createQuiz = asyncHandler(async (req, res)=> {
+        const {userId} = req.user
+        const { classId, questions, info} = req.body;
+
+        if (!classId || !questions) 
+            throw new ApiError(400, "Class ID and questions are required");
+
+        const classRef = await Class.findOne({_id : classId, teacher : userId})
+        if (!classRef) 
+            throw new ApiError(404, "Class not found");
+
+        let questionList = []
+        for(let question of questions){
+            const quesId = await createQuestion(question)
+            questionList.push(quesId)
+        }
+
+        const material = await Material.create({
+            classRef: classRef._id,
+            quiz : questionList,
+            materialType : "test",
+            info,
+        })
+        return sendSuccess(res, material, "Quiz Created successfully");
+    })
+
+    classAverageScore = asyncHandler(async (req, res)=>{
+        const {userId} = req.user
+        const { materialId } = req.body
+        const material = await Material.aggregate([
+            {
+                $match : {_id : materialId},
+            },
+            {
+                $lookup : {
+                    from : "Class",
+                    localField : "classRef",
+                    foreignField : "_id",
+                    by: "Class",
+                },
+            },
+            {
+                $project:{
+                    teacher : 1,
+                }
+            }
+        ])
+        if(material.length==0 || material[0].teacher!=userId) 
+            throw new ApiError(404,"Not able to access")
+
+        const quiz = await Quiz.aggregate([
+            {
+              $match: {
+                attempted: true,
+              }
+            },
+            {
+                $group: {
+                  _id: null,                 // Group all documents together
+                  minScore: { $min: "$score" },  // Get minimum score
+                  maxScore: { $max: "$score" },  // Get maximum score
+                  avgScore: { $avg: "$score" }   // Get average score
+                }
+            }
+        ])
+        const result  =  {
+            minScore : quiz[0].minScore,
+            maxScore : quiz[0].maxScore,
+            average  : quiz[0].avgScore,
+        }
+        return sendSuccess(200, result, "Average Score Fetched")
+
     })
 }
 const teacherController = new TeacherController()

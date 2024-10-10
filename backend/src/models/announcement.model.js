@@ -1,5 +1,4 @@
 import mongoose, {Schema} from "mongoose";
-
 const announcementSchema = new Schema({
     type : {
         type : String,
@@ -14,7 +13,8 @@ const announcementSchema = new Schema({
     },
     receiver: {
         required :true,
-        type : [],
+        type : [Schema.Types.ObjectId],
+        ref : "User",
     },
     subject : {
         type : String,
