@@ -18,10 +18,6 @@ const quizSchema = new Schema({
         type : Number,
         default : 0,
     },
-    attempted : {
-        type : Boolean,
-        default : false,
-    }
 }, {timestamps:true})
 
 

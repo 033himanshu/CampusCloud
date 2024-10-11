@@ -351,4 +351,6 @@ export const {
     getAllStudentInClass,
     getAllMaterial,
     isTeacherHoD,
+    createQuiz,
+    classAverageScore,
 } = teacherController;
