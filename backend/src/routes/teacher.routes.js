@@ -16,10 +16,13 @@ import {
     getAllSubjectInCourse,
     getAllStudentInClass,
     getAllMaterial,
+    createQuiz,
+    classAverageScore,
 } from "../controllers/teacher.controller.js"
 
 router.use(verifyJWT)
-
+router.route('/create-quiz').post(createQuiz)
+router.route('/get-class-average-score').post(classAverageScore)
 router.route('/is-teacher-hod').get(isTeacherHoD)
 router.route('/delete-subject-from-course').delete(deleteSubjectFromCourse)
 router.route('/assign-subject-to-course').post(assignSubjectToCourse)
